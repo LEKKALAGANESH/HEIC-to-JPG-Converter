@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEIC to JPG Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 700px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .drop-zone {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8f9ff;
+            position: relative;
+        }
+
+        .drop-zone:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+
+        .drop-zone.dragover {
+            border-color: #764ba2;
+            background: #e8ebff;
+            transform: scale(1.02);
+        }
+
+        .drop-zone-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .drop-zone-text {
+            color: #555;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+
+        .drop-zone-hint {
+            color: #888;
+            font-size: 0.85rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .browse-btn {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .browse-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .file-list {
+            margin-top: 25px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .file-list.show {
+            display: block;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-name {
+            color: #333;
+            font-size: 0.9rem;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-size {
+            color: #888;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+
+        .remove-file {
+            background: #ff5252;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        .remove-file:hover {
+            background: #ff1744;
+        }
+
+        .file-count {
+            text-align: center;
+            margin-top: 15px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .convert-btn {
+            display: block;
+            width: 100%;
+            margin-top: 25px;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .convert-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .convert-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .progress-container {
+            margin-top: 25px;
+            display: none;
+        }
+
+        .progress-container.show {
+            display: block;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .result-container {
+            margin-top: 25px;
+            display: none;
+        }
+
+        .result-container.show {
+            display: block;
+        }
+
+        .result-success {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .result-success h3 {
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
+
+        .result-stats {
+            color: #555;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .download-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .reset-btn {
+            display: inline-block;
+            margin-left: 10px;
+            padding: 12px 25px;
+            background: #757575;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .reset-btn:hover {
+            background: #616161;
+        }
+
+        .error-list {
+            margin-top: 15px;
+            background: #ffebee;
+            border: 1px solid #ef5350;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .error-list h4 {
+            color: #c62828;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .error-item {
+            color: #555;
+            font-size: 0.85rem;
+            padding: 5px 0;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .file-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .file-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .file-list::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .file-list::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        .debug-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            color: #666;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HEIC to JPG Converter</h1>
+        <p class="subtitle">Convert your iPhone photos to JPG format instantly</p>
+
+        <div class="drop-zone" id="dropZone">
+            <div class="drop-zone-icon">📸</div>
+            <p class="drop-zone-text">Drag & Drop your HEIC files here</p>
+            <p class="drop-zone-hint">or click to browse</p>
+            <button class="browse-btn" type="button" id="browseBtn">Browse Files</button>
+            <input type="file" id="fileInput" class="file-input" multiple accept=".heic,.HEIC,.heif,.HEIF">
+        </div>
+
+        <div class="file-list" id="fileList"></div>
+        <p class="file-count" id="fileCount"></p>
+
+        <button class="convert-btn" id="convertBtn" disabled>Convert to JPG</button>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p class="progress-text" id="progressText">Converting...</p>
+        </div>
+
+        <div class="result-container" id="resultContainer">
+            <div class="result-success">
+                <h3>Conversion Complete!</h3>
+                <p class="result-stats" id="resultStats"></p>
+                <a href="#" class="download-btn" id="downloadBtn">Download ZIP</a>
+                <button class="reset-btn" id="resetBtn" type="button">Convert More</button>
+            </div>
+            <div class="error-list" id="errorList" style="display: none;">
+                <h4>Failed to convert:</h4>
+                <div id="errorItems"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Store files as a Map to preserve File objects properly
+        let fileMap = new Map();
+        let sessionId = null;
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const browseBtn = document.getElementById('browseBtn');
+        const fileList = document.getElementById('fileList');
+        const fileCount = document.getElementById('fileCount');
+        const convertBtn = document.getElementById('convertBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const resultContainer = document.getElementById('resultContainer');
+        const resultStats = document.getElementById('resultStats');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const errorList = document.getElementById('errorList');
+        const errorItems = document.getElementById('errorItems');
+
+        // Browse button click
+        browseBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            fileInput.click();
+        });
+
+        // Drag and drop handlers
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('dragover');
+
+            const items = e.dataTransfer.items;
+            const files = [];
+
+            // Handle both files and items (for folder drops)
+            if (items) {
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].kind === 'file') {
+                        const file = items[i].getAsFile();
+                        if (file) files.push(file);
+                    }
+                }
+            } else {
+                for (let i = 0; i < e.dataTransfer.files.length; i++) {
+                    files.push(e.dataTransfer.files[i]);
+                }
+            }
+
+            console.log('Dropped files:', files.length, files.map(f => f.name));
+            handleFiles(files);
+        });
+
+        dropZone.addEventListener('click', (e) => {
+            if (e.target === dropZone || e.target.classList.contains('drop-zone-icon') ||
+                e.target.classList.contains('drop-zone-text') || e.target.classList.contains('drop-zone-hint')) {
+                fileInput.click();
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            console.log('Selected files:', files.length, files.map(f => f.name));
+            handleFiles(files);
+        });
+
+        function handleFiles(files) {
+            const heicFiles = files.filter(file => {
+                const name = file.name.toLowerCase();
+                return name.endsWith('.heic') || name.endsWith('.heif');
+            });
+
+            console.log('HEIC files found:', heicFiles.length);
+
+            heicFiles.forEach(file => {
+                // Use file name + size as unique key
+                const key = `${file.name}_${file.size}`;
+                if (!fileMap.has(key)) {
+                    fileMap.set(key, file);
+                    console.log('Added file:', file.name, 'Size:', file.size);
+                }
+            });
+
+            updateFileList();
+        }
+
+        function updateFileList() {
+            const files = Array.from(fileMap.values());
+
+            if (files.length === 0) {
+                fileList.classList.remove('show');
+                fileCount.textContent = '';
+                convertBtn.disabled = true;
+                return;
+            }
+
+            fileList.classList.add('show');
+            fileList.innerHTML = files.map((file, index) => `
+                <div class="file-item">
+                    <span class="file-name">${file.name}</span>
+                    <span class="file-size">${formatSize(file.size)}</span>
+                    <button class="remove-file" type="button" onclick="removeFile('${file.name}_${file.size}')">×</button>
+                </div>
+            `).join('');
+
+            fileCount.textContent = `${files.length} file${files.length > 1 ? 's' : ''} selected`;
+            convertBtn.disabled = false;
+        }
+
+        function removeFile(key) {
+            fileMap.delete(key);
+            updateFileList();
+        }
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        convertBtn.addEventListener('click', async () => {
+            const files = Array.from(fileMap.values());
+            if (files.length === 0) return;
+
+            console.log('Starting conversion of', files.length, 'files');
+
+            // Show progress
+            convertBtn.disabled = true;
+            convertBtn.innerHTML = '<span class="spinner"></span>Converting...';
+            progressContainer.classList.add('show');
+            resultContainer.classList.remove('show');
+            progressFill.style.width = '0%';
+            progressFill.style.background = '';
+
+            // Create FormData and append ALL files
+            const formData = new FormData();
+
+            files.forEach((file, index) => {
+                formData.append('files', file, file.name);
+                console.log(`Appended file ${index + 1}:`, file.name, 'Size:', file.size);
+            });
+
+            // Log FormData contents
+            console.log('FormData entries:');
+            for (let pair of formData.entries()) {
+                console.log(' -', pair[0], pair[1].name, pair[1].size);
+            }
+
+            // Progress animation
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 10;
+                if (progress > 90) progress = 90;
+                progressFill.style.width = progress + '%';
+            }, 300);
+
+            try {
+                const response = await fetch('/convert', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                clearInterval(progressInterval);
+
+                const result = await response.json();
+                console.log('Server response:', result);
+
+                if (result.success) {
+                    progressFill.style.width = '100%';
+                    sessionId = result.session_id;
+
+                    progressText.textContent = 'Done!';
+                    resultStats.textContent = `Successfully converted ${result.total_converted} file${result.total_converted > 1 ? 's' : ''}`;
+                    downloadBtn.href = `/download/${sessionId}`;
+
+                    if (result.failed && result.failed.length > 0) {
+                        errorList.style.display = 'block';
+                        errorItems.innerHTML = result.failed.map(f =>
+                            `<div class="error-item">${f.name}: ${f.error}</div>`
+                        ).join('');
+                    } else {
+                        errorList.style.display = 'none';
+                    }
+
+                    resultContainer.classList.add('show');
+                } else {
+                    throw new Error(result.error || 'Conversion failed');
+                }
+
+            } catch (error) {
+                clearInterval(progressInterval);
+                console.error('Conversion error:', error);
+                progressText.textContent = 'Error: ' + error.message;
+                progressFill.style.width = '100%';
+                progressFill.style.background = '#ef5350';
+            }
+
+            convertBtn.innerHTML = 'Convert to JPG';
+            convertBtn.disabled = false;
+        });
+
+        resetBtn.addEventListener('click', () => {
+            fileMap.clear();
+            sessionId = null;
+            updateFileList();
+            progressContainer.classList.remove('show');
+            resultContainer.classList.remove('show');
+            progressFill.style.width = '0%';
+            progressFill.style.background = '';
+            progressText.textContent = 'Converting...';
+            fileInput.value = '';
+        });
+    </script>
+</body>
+</html>
